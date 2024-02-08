@@ -1,7 +1,9 @@
 use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone};
 use chrono_humanize::HumanTime;
-use chrono_tz::Tz;
+use chrono_tz::{ParseError, Tz};
+use clap::error::Result;
 use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
+use core::time;
 use directories::BaseDirs;
 use prettytable::{format, row, Table};
 use serde::{Deserialize, Serialize};
@@ -36,19 +38,56 @@ enum Commands {
     },
     // TODO: Add "index" option to show indexes
     // TODO: Add option to show raw timezone instead of duration until the birthday
+    /// Lists entries
     List,
 }
 
 #[derive(Deserialize, Debug, Serialize)]
-struct Entry {
+struct TomlEntry {
     name: String,
     date: NaiveDate,
     timezone: Option<String>,
 }
 
+struct Entry {
+    name: String,
+    date: NaiveDate,
+    timezone: Option<Tz>,
+    /// The next occurence of the date from today.  
+    /// This is the date at midnight in the timezone of the entry,
+    /// and changed to the local timezone.  
+    /// If no timezone is specified, the local timezone is used.
+    next_occurence: DateTime<Local>,
+}
+
+enum EntryError {
+    TimezoneParseError(ParseError),
+}
+
+impl TryFrom<TomlEntry> for Entry {
+    type Error = EntryError;
+
+    fn try_from(toml_entry: TomlEntry) -> Result<Self, EntryError> {
+        let timezone: Option<Tz> = match toml_entry.timezone {
+            Some(tz) => match Tz::from_str_insensitive(&tz) {
+                Ok(parsed_tz) => Some(parsed_tz),
+                Err(e) => Err(EntryError::TimezoneParseError(e))?,
+            },
+            None => None,
+        };
+        let next_occurence = get_next_occurence(toml_entry.date, timezone);
+        Ok(Self {
+            name: toml_entry.name,
+            date: toml_entry.date,
+            timezone,
+            next_occurence,
+        })
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 struct Config {
-    birthdays: Vec<Entry>,
+    birthdays: Vec<TomlEntry>,
 }
 
 impl Default for Config {
@@ -209,7 +248,7 @@ fn main() {
                     None => "".to_string(),
                 }
             );
-            let new_entry = Entry {
+            let new_entry = TomlEntry {
                 name: name.clone(),
                 date: *date,
                 timezone: match timezone {
@@ -226,40 +265,41 @@ fn main() {
                 eprintln!("No entries found, add some with the 'add' command.");
                 exit(0);
             }
-            // List all entries
-            // for entry in toml_entries.birthdays.iter() {
-            //     println!(
-            //         "Name: {}, Date: {}, Timezone: {}",
-            //         entry.name,
-            //         entry.date,
-            //         match &entry.timezone {
-            //             Some(tz) => tz,
-            //             None => "None",
-            //         }
-            //     );
-            // }
+
+            let now: DateTime<Local> = Local::now();
+
+            // Parse the TomlEntry to Entry
+            let mut entries: Vec<Entry> = match conf_file
+                .config
+                .birthdays
+                .into_iter()
+                .map(Entry::try_from)
+                .collect()
+            {
+                Ok(entries) => entries,
+                Err(e) => match e {
+                    EntryError::TimezoneParseError(e) => {
+                        Cli::command()
+                            .error(ErrorKind::Io, format!("Error parsing timezone: {}.", e))
+                            // TODO: change the error code to 3
+                            // TODO: remove the "usage: " section that gets displayed
+                            .exit()
+                    }
+                },
+            };
+
+            // Sort the entries by date of next occurence
+            // TODO: Maybe move this earlier to we don't have to use mut on entries
+            entries.sort_by(|a, b| a.next_occurence.cmp(&b.next_occurence));
+
             let mut table = Table::new();
             // TODO: Add option to use format::consts::FORMAT_CLEAN, for easy parsing
             table.set_format(*format::consts::FORMAT_BOX_CHARS);
 
             // Makes the header bold
             table.add_row(row![b => "Name", "Date", "Age", "In"]);
-            for entry in conf_file.config.birthdays.iter() {
-                let timezone: Option<Tz>;
-                if let Some(tz) = &entry.timezone {
-                    match Tz::from_str_insensitive(&tz) {
-                        Ok(parsed_tz) => timezone = Some(parsed_tz),
-                        Err(e) => Cli::command()
-                            .error(ErrorKind::Io, format!("Error parsing timezone: {}.", e))
-                            // TODO: change the error code to 3
-                            // TODO: remove the "usage: " section that gets displayed
-                            .exit(),
-                    }
-                } else {
-                    timezone = None;
-                }
-                let next_occurence = get_next_occurence(entry.date, timezone);
-                let new_age = next_occurence.year() - entry.date.year();
+            for entry in entries.iter() {
+                let new_age = entry.next_occurence.year() - entry.date.year();
                 // TODO: Sort the entries by date of next occurence
                 table.add_row(row![
                     entry.name,
@@ -267,7 +307,7 @@ fn main() {
                     // entry.date.format("%C").to_string(),
                     entry.date.format("%d %B"), // TODO: Add option/config to customize the date format
                     format!("{} 🡒 {}", new_age - 1, new_age),
-                    HumanTime::from(next_occurence - Local::now())
+                    HumanTime::from(entry.next_occurence - now)
                 ]);
             }
 
