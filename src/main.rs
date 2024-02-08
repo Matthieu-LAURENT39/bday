@@ -242,7 +242,8 @@ fn main() {
             // TODO: Add option to use format::consts::FORMAT_CLEAN, for easy parsing
             table.set_format(*format::consts::FORMAT_BOX_CHARS);
 
-            table.add_row(row!["Name", "Date", "Age", "In"]);
+            // Makes the header bold
+            table.add_row(row![b => "Name", "Date", "Age", "In"]);
             for entry in conf_file.config.birthdays.iter() {
                 let timezone: Option<Tz>;
                 if let Some(tz) = &entry.timezone {
