@@ -94,7 +94,26 @@ fn main() {
             entries.sort_by(|a, b| a.next_occurence.cmp(&b.next_occurence));
 
             let mut table = Table::new();
-            table.set_format(*format::consts::FORMAT_BOX_CHARS);
+            // table.set_format(*format::consts::FORMAT_BOX_CHARS);
+            table.set_format(
+                format::FormatBuilder::new()
+                    .column_separator('│')
+                    .borders('│')
+                    .separators(
+                        &[format::LinePosition::Top],
+                        format::LineSeparator::new('─', '┬', '╭', '╮'),
+                    )
+                    .separators(
+                        &[format::LinePosition::Intern],
+                        format::LineSeparator::new('─', '┼', '├', '┤'),
+                    )
+                    .separators(
+                        &[format::LinePosition::Bottom],
+                        format::LineSeparator::new('─', '┴', '╰', '╯'),
+                    )
+                    .padding(1, 1)
+                    .build(),
+            );
 
             // Makes the header bold
             table.set_titles(row![b => "Name", "Date", "Age", "In"]);
