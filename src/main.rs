@@ -286,18 +286,16 @@ fn main() {
             entries.sort_by(|a, b| a.next_occurence.cmp(&b.next_occurence));
 
             let mut table = Table::new();
-            // TODO: Add option to use format::consts::FORMAT_CLEAN, for easy parsing
             table.set_format(*format::consts::FORMAT_BOX_CHARS);
 
             // Makes the header bold
-            table.add_row(row![b => "Name", "Date", "Age", "In"]);
+            table.set_titles(row![b => "Name", "Date", "Age", "In"]);
             let iter: Box<dyn Iterator<Item = &Entry>> = match limit {
                 Some(limit) => Box::new(entries.iter().take(*limit)),
                 None => Box::new(entries.iter()),
             };
             for entry in iter {
                 let new_age = entry.next_occurence.year() - entry.date.year();
-                // TODO: Sort the entries by date of next occurence
                 table.add_row(row![
                     entry.name,
                     // Chrono doesn't support locales yet
