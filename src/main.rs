@@ -13,7 +13,7 @@ const CONFIG_FILE_NAME: &str = "rust-birthday.toml";
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
-#[command(author = "Matthieu LAURENT", version = "0.1", about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 struct Cli {
     #[clap(subcommand)]
     command: Commands,
