@@ -3,7 +3,6 @@ use chrono_humanize::HumanTime;
 use chrono_tz::{ParseError, Tz};
 use clap::error::Result;
 use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
-use core::time;
 use directories::BaseDirs;
 use prettytable::{format, row, Table};
 use serde::{Deserialize, Serialize};
@@ -136,21 +135,20 @@ enum LoadConfigError {
 /// - $HOME/.config/birthdays.toml
 /// - $HOME/.birthdays.toml
 fn load_config() -> Result<ConfigFile, LoadConfigError> {
+    // Try various paths to find the config file
     for path in [
         //? ./birthdays.toml
-        Path::new(".").join(CONFIG_FILE_NAME),
-        //? $XDG_CONFIG_HOME/birthdays.toml
-        BaseDirs::new()
-            // TODO: Remove this unwrap
-            .unwrap()
-            .config_dir()
-            .join(CONFIG_FILE_NAME),
+        Some(Path::new(".").join(CONFIG_FILE_NAME)),
+        //? $XDG_CONFIG_HOME/birthdays.toml.
+        BaseDirs::new().and_then(|p: BaseDirs| Some(p.config_dir().join(CONFIG_FILE_NAME))),
         //? $HOME/.config/birthdays.toml
-        Path::new("~/.config/").join(CONFIG_FILE_NAME),
+        Some(Path::new("~/.config/").join(CONFIG_FILE_NAME)),
         //? $HOME/.birthdays.toml
-        Path::new("~/").join(".".to_owned() + CONFIG_FILE_NAME),
+        Some(Path::new("~/").join(".".to_owned() + CONFIG_FILE_NAME)),
     ]
     .iter()
+    // Remove the None values
+    .flatten()
     {
         if path.is_file() {
             let toml_str = fs::read_to_string(path).map_err(LoadConfigError::IoError)?;
