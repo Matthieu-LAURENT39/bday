@@ -39,7 +39,11 @@ enum Commands {
     // TODO: Add "index" option to show indexes
     // TODO: Add option to show raw timezone instead of duration until the birthday
     /// Lists entries
-    List,
+    List {
+        /// Display only the closest n entries
+        #[arg(short, long)]
+        limit: Option<usize>,
+    },
 }
 
 #[derive(Deserialize, Debug, Serialize)]
@@ -260,7 +264,7 @@ fn main() {
             let toml_str = toml::to_string(&conf_file.config).expect("Error serializing toml");
             fs::write(conf_file.path, toml_str).expect("Error writing toml file");
         }
-        Commands::List => {
+        Commands::List { limit } => {
             if conf_file.config.birthdays.is_empty() {
                 eprintln!("No entries found, add some with the 'add' command.");
                 exit(0);
@@ -298,7 +302,11 @@ fn main() {
 
             // Makes the header bold
             table.add_row(row![b => "Name", "Date", "Age", "In"]);
-            for entry in entries.iter() {
+            let iter: Box<dyn Iterator<Item = &Entry>> = match limit {
+                Some(limit) => Box::new(entries.iter().take(*limit)),
+                None => Box::new(entries.iter()),
+            };
+            for entry in iter {
                 let new_age = entry.next_occurence.year() - entry.date.year();
                 // TODO: Sort the entries by date of next occurence
                 table.add_row(row![
