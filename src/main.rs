@@ -216,23 +216,14 @@ fn main() {
             // TODO: Use clap to display the error message
             LoadConfigError::IoError(e) => {
                 eprintln!("Error reading config file: {}", e);
-                exit(1);
+                exit(3);
             }
             LoadConfigError::TomlError(e) => {
-                eprintln!("Error parsing config file: {}", e);
-                exit(1);
+                eprintln!("Error parsing toml file:\n{}\nYou can delete the file, it will be recreated the next time you add a new birthday.", e);
+                exit(3);
             }
         },
     };
-
-    // Err(e) => Cli::command()
-    //     .error(
-    //         ErrorKind::Io,
-    //         format!("Error parsing toml file:\n{}\nYou can delete the file, it will be recreated the next time you add a new birthday.", e),
-    //     )
-    //     // TODO: change the error code to 3
-    //     // TODO: remove the "usage: " section that gets displayed
-    //     .exit(),
 
     match &cli.command {
         Commands::Add {
