@@ -1,5 +1,5 @@
 use crate::utils;
-use chrono::{DateTime, Local, NaiveDate};
+use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use chrono_tz::{ParseError, Tz};
 use clap::error::Result;
 use directories::BaseDirs;
@@ -19,16 +19,29 @@ pub struct TomlEntry {
 pub struct Entry {
     pub name: String,
     pub date: NaiveDate,
+    /// Considered as the local timezone if None
     pub timezone: Option<Tz>,
-    /// The next occurence of the date from today.  
-    /// This is the date at midnight in the timezone of the entry,
-    /// and changed to the local timezone.  
-    /// If no timezone is specified, the local timezone is used.
-    pub next_occurence: DateTime<Local>,
+    /// The previous occurence of the date from today.
+    /// If the date is today, this will be None.
+    /// The time correspond be 23h59 in the requested timezone (aka the end of the date).
+    pub prev_occurence: Option<DateTime<Local>>,
+    /// The next occurence of the date from today.
+    /// If the date is today, this will be None.
+    /// The time correspond to midnight in the requested timezone (aka the begining of the date).
+    pub next_occurence: Option<DateTime<Local>>,
 }
 
 pub enum EntryError {
     TimezoneParseError(ParseError),
+}
+
+/// Convert a naive DateTime (that is in the specified timezone) to the local timezone.
+/// If no timezone is provided, the timezone used is the local timezone.
+fn localize_naive_datetime(dt: NaiveDateTime, timezone: Option<Tz>) -> DateTime<Local> {
+    match timezone {
+        Some(tz) => tz.from_local_datetime(&dt).unwrap().with_timezone(&Local),
+        None => Local.from_local_datetime(&dt).unwrap(),
+    }
 }
 
 impl TryFrom<TomlEntry> for Entry {
@@ -42,11 +55,47 @@ impl TryFrom<TomlEntry> for Entry {
             },
             None => None,
         };
-        let next_occurence = utils::get_next_occurence(toml_entry.date, timezone);
+
+        // // The current time in the timezone of the entry, localised to UTC
+        // let dt: DateTime<Utc> = match timezone {
+        //     // Get current time in the timezone of the entry, then convert to UTC
+        //     Some(tz) => tz
+        //         .from_utc_datetime(&Utc::now().naive_utc())
+        //         .with_timezone(&Utc),
+        //     // Get current time in local timezone, then convert to UTC
+        //     None => Local::now().with_timezone(&Utc),
+        // };
+
+        // The current date in the timezone of the entry
+        let date_tz: NaiveDate = match timezone {
+            Some(tz) => tz.from_utc_datetime(&Utc::now().naive_utc()).date_naive(),
+            None => Local::now().naive_local().date(),
+        };
+
+        // We call it with the current time it is in the timezone of the entry
+        let (prev_occurence, next_occurence) = match utils::find_prev_next_occurences(
+            toml_entry.date.day(),
+            toml_entry.date.month(),
+            date_tz,
+        ) {
+            Some((prev, next)) => (
+                Some(localize_naive_datetime(
+                    prev.and_hms_opt(23, 59, 59).unwrap(),
+                    timezone,
+                )),
+                Some(localize_naive_datetime(
+                    next.and_hms_opt(0, 0, 0).unwrap(),
+                    timezone,
+                )),
+            ),
+            None => (None, None),
+        };
+
         Ok(Self {
             name: toml_entry.name,
             date: toml_entry.date,
             timezone,
+            prev_occurence,
             next_occurence,
         })
     }

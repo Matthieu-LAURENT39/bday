@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Local};
+use chrono::{DateTime, Datelike, Local, Utc};
 use chrono_humanize::HumanTime;
 use clap::error::Result;
 use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
@@ -91,7 +91,7 @@ fn main() {
 
             // Sort the entries by date of next occurence
             // TODO: Maybe move this earlier to we don't have to use mut on entries
-            entries.sort_by(|a, b| a.next_occurence.cmp(&b.next_occurence));
+            entries.sort_by(|a, b| b.next_occurence.cmp(&a.next_occurence));
 
             let mut table = Table::new();
             // table.set_format(*format::consts::FORMAT_BOX_CHARS);
@@ -122,14 +122,18 @@ fn main() {
                 None => Box::new(entries.iter()),
             };
             for entry in iter {
-                let new_age = entry.next_occurence.year() - entry.date.year();
+                let new_age =
+                    entry.next_occurence.unwrap_or(Local::now()).year() - entry.date.year();
                 table.add_row(row![
                     entry.name,
                     // Chrono doesn't support locales yet
                     // entry.date.format("%C").to_string(),
                     entry.date.format("%d %B"), // TODO: Add option/config to customize the date format
                     format!("{} 🡒 {}", new_age - 1, new_age),
-                    HumanTime::from(entry.next_occurence - now)
+                    match entry.next_occurence {
+                        Some(dt) => HumanTime::from(dt - now).to_string(),
+                        None => "Today!".to_string(),
+                    }
                 ]);
             }
 
