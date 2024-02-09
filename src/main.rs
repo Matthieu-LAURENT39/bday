@@ -40,15 +40,6 @@ fn main() {
             timezone,
         } => {
             // Add the entry to the config file
-            println!(
-                "Adding entry: {}, Date: {}{}",
-                name,
-                date,
-                match timezone {
-                    Some(tz) => format!(", Timezone: {}", tz.name()),
-                    None => "".to_string(),
-                }
-            );
             let new_entry = config::TomlEntry {
                 name: name.clone(),
                 date: *date,
@@ -57,6 +48,15 @@ fn main() {
             conf_file.config.birthdays.push(new_entry);
             let toml_str = toml::to_string(&conf_file.config).expect("Error serializing toml");
             fs::write(conf_file.path, toml_str).expect("Error writing toml file");
+            println!(
+                "Added entry for {}, born: {}{}",
+                name,
+                date,
+                match timezone {
+                    Some(tz) => format!(" (Timezone: {})", tz.name()),
+                    None => "".to_string(),
+                }
+            );
         }
         cli::Commands::List { limit } => {
             if conf_file.config.birthdays.is_empty() {
