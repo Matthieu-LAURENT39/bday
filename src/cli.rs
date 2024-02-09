@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use crate::config::BirthdayDate;
 use chrono_tz::Tz;
 use clap::{Parser, Subcommand};
 
@@ -20,7 +20,7 @@ pub enum Commands {
 
         /// The date associated with the entry
         #[arg(short, long)]
-        date: NaiveDate,
+        date: BirthdayDate,
 
         /// Optional timezone for the entry
         #[clap(short, long)]

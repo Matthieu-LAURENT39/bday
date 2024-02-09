@@ -4,6 +4,7 @@ use clap::error::Result;
 use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
 use prettytable::{format, row, Table};
 use std::{fs, process::exit};
+
 mod cli;
 mod config;
 mod utils;
@@ -119,14 +120,20 @@ fn main() {
                 None => Box::new(entries.iter()),
             };
             for entry in iter {
-                let new_age =
-                    entry.next_occurence.unwrap_or(Local::now()).year() - entry.date.year();
+                let new_age: Option<i32> = entry
+                    .date
+                    .year
+                    .map(|y| entry.next_occurence.unwrap_or(Local::now()).year() - y);
+
                 table.add_row(row![
                     entry.name,
                     // Chrono doesn't support locales yet
                     // entry.date.format("%C").to_string(),
-                    entry.date.format("%d %B"), // TODO: Add option/config to customize the date format
-                    format!("{} 🡒 {}", new_age - 1, new_age),
+                    entry.date.naive_date_safe_year().format("%d %B"),
+                    match new_age {
+                        Some(age) => format!("{} 🡒 {}", age - 1, age),
+                        None => "?".to_string(),
+                    },
                     match entry.next_occurence {
                         Some(dt) => HumanTime::from(dt - now).to_string(),
                         None => "Today!".to_string(),

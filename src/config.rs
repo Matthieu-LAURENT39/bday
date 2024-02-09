@@ -4,21 +4,112 @@ use chrono_tz::{ParseError, Tz};
 use clap::error::Result;
 use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::{self, Path};
+use std::str::FromStr;
+use std::{fmt, fs};
 
 const CONFIG_FILE_NAME: &str = "rust-birthday.toml";
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct BirthdayDate {
+    pub day: u32,
+    pub month: u32,
+    pub year: Option<i32>,
+}
+
+impl BirthdayDate {
+    /// Get the date as a NaiveDate, using 2000 as default year if the year is not provided.  
+    /// This is useful if you need a NaiveDate but don't care about the year.
+    pub fn naive_date_safe_year(&self) -> NaiveDate {
+        NaiveDate::from_ymd_opt(self.year.unwrap_or(2000), self.month, self.day).unwrap()
+    }
+}
+
+impl From<NaiveDate> for BirthdayDate {
+    fn from(date: NaiveDate) -> Self {
+        Self {
+            day: date.day(),
+            month: date.month(),
+            year: Some(date.year()),
+        }
+    }
+}
+
+impl FromStr for BirthdayDate {
+    type Err = &'static str;
+
+    /// Parse a BirthdayDate from a string, in the format YYYY-MM-DD or MM-DD
+    fn from_str(date: &str) -> Result<Self, Self::Err> {
+        let date_parts: Vec<&str> = date.split('-').collect();
+        if date_parts.len() != 2 && date_parts.len() != 3 {
+            return Err("Invalid date format, use YYYY-MM-DD or MM-DD");
+        }
+
+        let day: u32 = date_parts[date_parts.len() - 1]
+            .parse()
+            .map_err(|_| "Invalid day")?;
+        let month: u32 = date_parts[date_parts.len() - 2]
+            .parse()
+            .map_err(|_| "Invalid month")?;
+        let year: Option<i32> = if date_parts.len() == 3 {
+            Some(date_parts[0].parse().map_err(|_| "Invalid year")?)
+        } else {
+            None
+        };
+
+        // Check if the date is valid
+        // We use 2020 as default as it is a leap year, so it can handle february 29th
+        if NaiveDate::from_ymd_opt(year.unwrap_or(2000), month, day).is_none() {
+            return Err("Invalid date");
+        }
+
+        Ok(Self { day, month, year })
+    }
+}
+
+impl fmt::Display for BirthdayDate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.year {
+            Some(year) => write!(f, "{}-{:02}-{:02}", year, self.month, self.day),
+            None => write!(f, "{:02}-{:02}", self.month, self.day),
+        }
+    }
+}
+
+impl Serialize for BirthdayDate {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self.year {
+            Some(year) => {
+                serializer.serialize_str(&format!("{}-{:02}-{:02}", year, self.month, self.day))
+            }
+            None => serializer.serialize_str(&format!("{:02}-{:02}", self.month, self.day)),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for BirthdayDate {
+    fn deserialize<D>(deserializer: D) -> Result<BirthdayDate, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s: String = Deserialize::deserialize(deserializer)?;
+        s.parse().map_err(serde::de::Error::custom)
+    }
+}
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct TomlEntry {
     pub name: String,
-    pub date: NaiveDate,
+    pub date: BirthdayDate,
     pub timezone: Option<String>,
 }
 
 pub struct Entry {
     pub name: String,
-    pub date: NaiveDate,
+    pub date: BirthdayDate,
     /// Considered as the local timezone if None
     pub timezone: Option<Tz>,
     /// The previous occurence of the date from today.
@@ -74,8 +165,8 @@ impl TryFrom<TomlEntry> for Entry {
 
         // We call it with the current time it is in the timezone of the entry
         let (prev_occurence, next_occurence) = match utils::find_prev_next_occurences(
-            toml_entry.date.day(),
-            toml_entry.date.month(),
+            toml_entry.date.day,
+            toml_entry.date.month,
             date_tz,
         ) {
             Some((prev, next)) => (
