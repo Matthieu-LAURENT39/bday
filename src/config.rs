@@ -153,7 +153,7 @@ pub fn load_config() -> Result<ConfigFile, LoadConfigError> {
         //? ./birthdays.toml
         Some(Path::new(".").join(CONFIG_FILE_NAME)),
         //? $XDG_CONFIG_HOME/birthdays.toml.
-        BaseDirs::new().and_then(|p: BaseDirs| Some(p.config_dir().join(CONFIG_FILE_NAME))),
+        BaseDirs::new().map(|p: BaseDirs| p.config_dir().join(CONFIG_FILE_NAME)),
         //? $HOME/.config/birthdays.toml
         Some(Path::new("~/.config/").join(CONFIG_FILE_NAME)),
         //? $HOME/.birthdays.toml

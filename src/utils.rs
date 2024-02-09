@@ -1,20 +1,4 @@
-use core::time;
-
-use chrono::{DateTime, Datelike, Duration, Local, NaiveDate, NaiveTime, TimeZone, Utc};
-use chrono_tz::Tz;
-
-// The current time in the timezone, localised to UTC
-// If no timezone is provided, the timezone used is the local timezone
-fn now_utc(timezone: Option<Tz>) -> DateTime<Utc> {
-    match timezone {
-        // Get current time in the timezone of the entry, then convert to UTC
-        Some(tz) => tz
-            .from_utc_datetime(&Utc::now().naive_utc())
-            .with_timezone(&Utc),
-        // Get current time in local timezone, then convert to UTC
-        None => Local::now().with_timezone(&Utc),
-    }
-}
+use chrono::{Datelike, NaiveDate};
 
 /// Add a number of years to a date.
 /// Handles the february 29th case, by returning february 28th on non-leap years.
@@ -54,47 +38,6 @@ pub fn find_prev_next_occurences(
         Some((prev_year_birthday, curr_year_birthday))
     }
 }
-
-/*
-/// Get the next occurence of a date, that occurs after today (or today).
-/// The time will be midnight in the requested timezone, or in the local timezone if none is provided.
-pub fn get_next_occurence(date: NaiveDate, timezone: Option<Tz>) -> DateTime<Local> {
-    // Now in the local timezone, converted to UTC
-    let now: DateTime<Utc> = Local::now().into();
-    let current_year = now.year();
-
-    let mut offset = 0;
-    loop {
-        // The match None branch is mainly to handle the february 29th case
-        // I can't think of any other case where with_year would return None, so i'm not handling it
-        let birthday = match date.with_year(current_year + offset) {
-            Some(date) => date,
-            // Try the previous day (so feb 29th becomes feb 28th)
-            None => (date - Duration::days(1))
-                .with_year(current_year + offset)
-                .unwrap(),
-        };
-
-        // If the birthday is today or in the future, return it
-        if now <= birthday {
-            // Find the time for midnight in the timezone of the entry
-            return match timezone {
-                Some(tz) => {
-                    tz.from_local_datetime(&birthday.and_time(NaiveTime::MIN))
-                        // Documentation is very unclear as to what can cause it to return Err
-                        .unwrap()
-                        .with_timezone(&Local)
-                }
-                None => Local
-                    .from_local_datetime(&birthday.and_time(NaiveTime::MIN))
-                    .unwrap(),
-            };
-        }
-
-        offset += 1;
-    }
-}
-*/
 
 #[cfg(test)]
 mod tests {

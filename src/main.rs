@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Local, Utc};
+use chrono::{DateTime, Datelike, Local};
 use chrono_humanize::HumanTime;
 use clap::error::Result;
 use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
@@ -52,10 +52,7 @@ fn main() {
             let new_entry = config::TomlEntry {
                 name: name.clone(),
                 date: *date,
-                timezone: match timezone {
-                    Some(tz) => Some(tz.name().to_string()),
-                    None => None,
-                },
+                timezone: timezone.as_ref().map(|tz| tz.name().to_string()),
             };
             conf_file.config.birthdays.push(new_entry);
             let toml_str = toml::to_string(&conf_file.config).expect("Error serializing toml");
