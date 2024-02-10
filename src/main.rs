@@ -116,18 +116,19 @@ fn main() {
             );
 
             // Makes the header bold
-            table.set_titles(row![b => "Name", "Date", "Age", "In"]);
+            table.set_titles(row![b => "#", "Name", "Date", "Age", "In"]);
             let iter: Box<dyn Iterator<Item = &config::Entry>> = match limit {
                 Some(limit) => Box::new(entries.iter().take(*limit)),
                 None => Box::new(entries.iter()),
             };
-            for entry in iter {
+            for (index, entry) in iter.enumerate() {
                 let new_age: Option<i32> = entry
                     .date
                     .year
                     .map(|y| entry.next_occurence.unwrap_or(Local::now()).year() - y);
 
                 table.add_row(row![
+                    index + 1,
                     entry.name,
                     // Chrono doesn't support locales yet
                     // entry.date.format("%C").to_string(),
