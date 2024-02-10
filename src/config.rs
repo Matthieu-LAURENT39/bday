@@ -10,7 +10,7 @@ use std::{fmt, fs};
 
 const CONFIG_FILE_NAME: &str = "rust-birthday.toml";
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub struct BirthdayDate {
     pub day: u32,
     pub month: u32,
@@ -46,19 +46,14 @@ impl FromStr for BirthdayDate {
         // Determine positions of day, month, and year based on the format
         let (day, month, year) = match date_parts.len() {
             2 => {
-                // MM-DD format
-                if separator == '-' {
-                    let month = date_parts[0].parse().map_err(|_| "Invalid month")?;
-                    let day = date_parts[1].parse().map_err(|_| "Invalid day")?;
-                    let year = None;
-                    (day, month, year)
-                }
                 // DD/MM format
-                else {
+                if separator == '/' {
                     let day = date_parts[0].parse().map_err(|_| "Invalid day")?;
                     let month = date_parts[1].parse().map_err(|_| "Invalid month")?;
                     let year = None;
                     (day, month, year)
+                } else {
+                    return Err("Invalid date format, use DD/MM, DD/MM/YYYY, or YYYY-MM-DD");
                 }
             }
             3 => {
@@ -77,7 +72,7 @@ impl FromStr for BirthdayDate {
                     (day, month, Some(year))
                 }
             }
-            _ => return Err("Invalid date format, use DD/MM/YYYY, DD/MM, YYYY-MM-DD or MM-DD"),
+            _ => return Err("Invalid date format, use DD/MM, DD/MM/YYYY, or YYYY-MM-DD"),
         };
 
         // Check if the date is valid
@@ -96,30 +91,6 @@ impl fmt::Display for BirthdayDate {
             Some(year) => write!(f, "{}-{:02}-{:02}", year, self.month, self.day),
             None => write!(f, "{:02}-{:02}", self.month, self.day),
         }
-    }
-}
-
-impl Serialize for BirthdayDate {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match self.year {
-            Some(year) => {
-                serializer.serialize_str(&format!("{}-{:02}-{:02}", year, self.month, self.day))
-            }
-            None => serializer.serialize_str(&format!("{:02}-{:02}", self.month, self.day)),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for BirthdayDate {
-    fn deserialize<D>(deserializer: D) -> Result<BirthdayDate, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: String = Deserialize::deserialize(deserializer)?;
-        s.parse().map_err(serde::de::Error::custom)
     }
 }
 
