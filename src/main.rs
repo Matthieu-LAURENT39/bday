@@ -29,7 +29,7 @@ fn main() {
                 exit(3);
             }
             config::LoadConfigError::TomlError(e) => {
-                eprintln!("Error parsing toml file:\n{}\nYou can delete the file, it will be recreated the next time you add a new birthday.", e);
+                eprintln!("Error parsing the birthday file:\n{}\nYou can delete the file, it will be recreated the next time you add a new birthday.", e);
                 exit(3);
             }
         },
@@ -42,14 +42,15 @@ fn main() {
             timezone,
         } => {
             // Add the entry to the config file
-            let new_entry = config::TomlEntry {
+            let new_entry = config::ConfigEntry {
                 name: name.clone(),
                 date: *date,
                 timezone: timezone.as_ref().map(|tz| tz.name().to_string()),
             };
             conf_file.config.birthdays.push(new_entry);
-            let toml_str = toml::to_string(&conf_file.config).expect("Error serializing toml");
-            fs::write(conf_file.path, toml_str).expect("Error writing toml file");
+            let toml_str =
+                toml::to_string(&conf_file.config).expect("Error serializing birthday file");
+            fs::write(conf_file.path, toml_str).expect("Error writing birthday file");
             println!(
                 "Added entry for {}, born: {}{}",
                 name,
@@ -68,7 +69,7 @@ fn main() {
 
             let now: DateTime<Local> = Local::now();
 
-            // Parse the TomlEntry to Entry
+            // Parse the ConfigEntry to Entry
             let mut entries: Vec<config::Entry> = match conf_file
                 .config
                 .birthdays

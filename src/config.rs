@@ -95,7 +95,7 @@ impl fmt::Display for BirthdayDate {
 }
 
 #[derive(Deserialize, Debug, Serialize)]
-pub struct TomlEntry {
+pub struct ConfigEntry {
     pub name: String,
     pub date: BirthdayDate,
     pub timezone: Option<String>,
@@ -129,11 +129,11 @@ fn localize_naive_datetime(dt: NaiveDateTime, timezone: Option<Tz>) -> DateTime<
     }
 }
 
-impl TryFrom<TomlEntry> for Entry {
+impl TryFrom<ConfigEntry> for Entry {
     type Error = EntryError;
 
-    fn try_from(toml_entry: TomlEntry) -> Result<Self, EntryError> {
-        let timezone: Option<Tz> = match toml_entry.timezone {
+    fn try_from(config_entry: ConfigEntry) -> Result<Self, EntryError> {
+        let timezone: Option<Tz> = match config_entry.timezone {
             Some(tz) => match Tz::from_str_insensitive(&tz) {
                 Ok(parsed_tz) => Some(parsed_tz),
                 Err(e) => Err(EntryError::TimezoneParseError(e))?,
@@ -159,8 +159,8 @@ impl TryFrom<TomlEntry> for Entry {
 
         // We call it with the current time it is in the timezone of the entry
         let (prev_occurence, next_occurence) = match utils::find_prev_next_occurences(
-            toml_entry.date.day,
-            toml_entry.date.month,
+            config_entry.date.day,
+            config_entry.date.month,
             date_tz,
         ) {
             Some((prev, next)) => (
@@ -177,8 +177,8 @@ impl TryFrom<TomlEntry> for Entry {
         };
 
         Ok(Self {
-            name: toml_entry.name,
-            date: toml_entry.date,
+            name: config_entry.name,
+            date: config_entry.date,
             timezone,
             prev_occurence,
             next_occurence,
@@ -188,7 +188,7 @@ impl TryFrom<TomlEntry> for Entry {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
-    pub birthdays: Vec<TomlEntry>,
+    pub birthdays: Vec<ConfigEntry>,
 }
 
 impl Default for Config {
@@ -237,7 +237,7 @@ pub fn load_config() -> Result<ConfigFile, LoadConfigError> {
     for path in [
         //? ./birthdays.toml
         Some(Path::new(".").join(CONFIG_FILE_NAME)),
-        //? $XDG_CONFIG_HOME/birthdays.toml.
+        //? $XDG_CONFIG_HOME/birthdays.toml
         BaseDirs::new().map(|p: BaseDirs| p.config_dir().join(CONFIG_FILE_NAME)),
         //? $HOME/.config/birthdays.toml
         Some(Path::new("~/.config/").join(CONFIG_FILE_NAME)),
