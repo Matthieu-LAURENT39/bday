@@ -8,7 +8,7 @@ use std::path::{self, Path};
 use std::str::FromStr;
 use std::{fmt, fs};
 
-const CONFIG_FILE_NAME: &str = "rust-birthday.toml";
+const CONFIG_FILE_NAME: &str = "bday.toml";
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub struct BirthdayDate {
@@ -211,7 +211,7 @@ impl Default for ConfigFile {
             .unwrap_or_else(|| path::PathBuf::from("~/.config/").join(CONFIG_FILE_NAME));
 
         Self {
-            // Default to $XDG_CONFIG_HOME/birthdays.toml
+            // Default to $XDG_CONFIG_HOME/bday.toml
             path,
             config: Config::default(),
         }
@@ -229,20 +229,20 @@ pub enum LoadConfigError {
 
 /// Load the config file  
 /// The priority is in that order:
-/// - ./birthdays.toml
-/// - $XDG_CONFIG_HOME/birthdays.toml
-/// - $HOME/.config/birthdays.toml
-/// - $HOME/.birthdays.toml
+/// - ./bday.toml
+/// - $XDG_CONFIG_HOME/bday.toml
+/// - $HOME/.config/bday.toml
+/// - $HOME/.bday.toml
 pub fn load_config() -> Result<ConfigFile, LoadConfigError> {
     // Try various paths to find the config file
     for path in [
-        //? ./birthdays.toml
+        //? ./bday.toml
         Some(Path::new(".").join(CONFIG_FILE_NAME)),
-        //? $XDG_CONFIG_HOME/birthdays.toml
+        //? $XDG_CONFIG_HOME/bday.toml
         BaseDirs::new().map(|p: BaseDirs| p.config_dir().join(CONFIG_FILE_NAME)),
-        //? $HOME/.config/birthdays.toml
+        //? $HOME/.config/bday.toml
         Some(Path::new("~/.config/").join(CONFIG_FILE_NAME)),
-        //? $HOME/.birthdays.toml
+        //? $HOME/.bday.toml
         Some(Path::new("~/").join(".".to_owned() + CONFIG_FILE_NAME)),
     ]
     .iter()
