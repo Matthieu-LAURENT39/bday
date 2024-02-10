@@ -88,8 +88,8 @@ impl FromStr for BirthdayDate {
 impl fmt::Display for BirthdayDate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.year {
-            Some(year) => write!(f, "{}-{:02}-{:02}", year, self.month, self.day),
-            None => write!(f, "{:02}-{:02}", self.month, self.day),
+            Some(year) => write!(f, "{:02}/{:02}/{}", self.day, self.month, year),
+            None => write!(f, "{:02}/{:02}", self.day, self.month),
         }
     }
 }
