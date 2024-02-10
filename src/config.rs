@@ -97,6 +97,7 @@ impl fmt::Display for BirthdayDate {
 #[derive(Deserialize, Debug, Serialize)]
 pub struct ConfigEntry {
     pub name: String,
+    #[serde(flatten)]
     pub date: BirthdayDate,
     pub timezone: Option<String>,
 }
