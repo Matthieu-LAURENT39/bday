@@ -1,7 +1,8 @@
 use chrono::{DateTime, Datelike, Local};
 use chrono_humanize::HumanTime;
-use clap::error::Result;
-use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
+// use clap::error::Result;
+// use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
+use clap::{error::ErrorKind, CommandFactory, Parser};
 use prettytable::{format, row, Table};
 use std::{fs, process::exit};
 

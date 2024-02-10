@@ -40,21 +40,44 @@ impl FromStr for BirthdayDate {
 
     /// Parse a BirthdayDate from a string, in the format YYYY-MM-DD or MM-DD
     fn from_str(date: &str) -> Result<Self, Self::Err> {
-        let date_parts: Vec<&str> = date.split('-').collect();
-        if date_parts.len() != 2 && date_parts.len() != 3 {
-            return Err("Invalid date format, use YYYY-MM-DD or MM-DD");
-        }
+        let separator = if date.contains('-') { '-' } else { '/' };
+        let date_parts: Vec<&str> = date.split(separator).collect();
 
-        let day: u32 = date_parts[date_parts.len() - 1]
-            .parse()
-            .map_err(|_| "Invalid day")?;
-        let month: u32 = date_parts[date_parts.len() - 2]
-            .parse()
-            .map_err(|_| "Invalid month")?;
-        let year: Option<i32> = if date_parts.len() == 3 {
-            Some(date_parts[0].parse().map_err(|_| "Invalid year")?)
-        } else {
-            None
+        // Determine positions of day, month, and year based on the format
+        let (day, month, year) = match date_parts.len() {
+            2 => {
+                // MM-DD format
+                if separator == '-' {
+                    let month = date_parts[0].parse().map_err(|_| "Invalid month")?;
+                    let day = date_parts[1].parse().map_err(|_| "Invalid day")?;
+                    let year = None;
+                    (day, month, year)
+                }
+                // DD/MM format
+                else {
+                    let day = date_parts[0].parse().map_err(|_| "Invalid day")?;
+                    let month = date_parts[1].parse().map_err(|_| "Invalid month")?;
+                    let year = None;
+                    (day, month, year)
+                }
+            }
+            3 => {
+                // YYYY-MM-DD format
+                if separator == '-' {
+                    let year = date_parts[0].parse().map_err(|_| "Invalid year")?;
+                    let month = date_parts[1].parse().map_err(|_| "Invalid month")?;
+                    let day = date_parts[2].parse().map_err(|_| "Invalid day")?;
+                    (day, month, Some(year))
+                }
+                // DD/MM/YYYY format
+                else {
+                    let day = date_parts[0].parse().map_err(|_| "Invalid day")?;
+                    let month = date_parts[1].parse().map_err(|_| "Invalid month")?;
+                    let year = date_parts[2].parse().map_err(|_| "Invalid year")?;
+                    (day, month, Some(year))
+                }
+            }
+            _ => return Err("Invalid date format, use DD/MM/YYYY, DD/MM, YYYY-MM-DD or MM-DD"),
         };
 
         // Check if the date is valid
