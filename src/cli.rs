@@ -24,6 +24,7 @@ pub enum Commands {
 
         /// Optional timezone for the entry
         #[clap(short, long)]
+        #[clap(value_parser = Tz::from_str_insensitive)]
         timezone: Option<Tz>,
     },
     // TODO: Add "index" option to show indexes
