@@ -1,4 +1,6 @@
 ![Crates.io](https://img.shields.io/crates/v/bday)
+[![Build](https://github.com/Matthieu-LAURENT39/bday/actions/workflows/build.yaml/badge.svg)](https://github.com/Matthieu-LAURENT39/bday/actions/workflows/build.yaml)
+[![Test](https://github.com/Matthieu-LAURENT39/bday/actions/workflows/test.yaml/badge.svg)](https://github.com/Matthieu-LAURENT39/bday/actions/workflows/test.yaml)
 
 # 🎂 Bday 🎉
 
