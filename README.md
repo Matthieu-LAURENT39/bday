@@ -10,6 +10,13 @@ Easily remember and see upcoming birthdays 🎂
 cargo install bday
 ```
 
+### From source
+```bash
+git clone "https://github.com/Matthieu-LAURENT39/bday"
+cd bday
+cargo install --path .
+```
+
 ## Usage
 ```bash
 # Adds a birthday
