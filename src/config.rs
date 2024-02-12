@@ -2,9 +2,8 @@ use crate::utils;
 use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use chrono_tz::{ParseError, Tz};
 use clap::error::Result;
-use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
-use std::path::{self, Path, PathBuf};
+use std::path::{self, PathBuf};
 use std::str::FromStr;
 use std::{fmt, fs};
 
@@ -213,7 +212,7 @@ pub enum LoadConfigError {
 /// Load the given config file
 pub fn load_config(path: &PathBuf) -> Result<ConfigFile, LoadConfigError> {
     if path.is_file() {
-        let toml_str = fs::read_to_string(&path).map_err(LoadConfigError::IoError)?;
+        let toml_str = fs::read_to_string(path).map_err(LoadConfigError::IoError)?;
         return toml::from_str(&toml_str)
             .map_err(LoadConfigError::TomlError)
             .map(|config| ConfigFile {

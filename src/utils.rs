@@ -42,8 +42,7 @@ pub fn find_prev_next_occurences(
 #[cfg(test)]
 mod tests {
     use super::find_prev_next_occurences;
-    use chrono::{DateTime, Duration, Local, NaiveDate};
-    use chrono_tz::TZ_VARIANTS;
+    use chrono::NaiveDate;
     use test_case::test_case;
 
     #[test]
