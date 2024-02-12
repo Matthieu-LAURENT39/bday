@@ -4,7 +4,6 @@ use crate::config::BirthdayDate;
 use chrono_tz::Tz;
 use clap::{Parser, Subcommand};
 
-/// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
