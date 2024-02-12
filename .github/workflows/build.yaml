@@ -14,5 +14,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Use stable toolchain
+        run: echo "RUSTUP_TOOLCHAIN=stable" >> "$GITHUB_ENV"
+
+      - name: Fetch dependencies
+        run: cargo fetch --locked
+
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --verbose --frozen --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: target/release/bday
