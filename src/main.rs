@@ -3,7 +3,9 @@ use chrono_humanize::HumanTime;
 // use clap::error::Result;
 // use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
 use clap::{error::ErrorKind, CommandFactory, Parser};
+use directories::BaseDirs;
 use prettytable::{format, row, Table};
+use std::path::PathBuf;
 use std::{fs, process::exit};
 
 mod cli;
@@ -18,11 +20,21 @@ mod utils;
 fn main() {
     let cli = cli::Cli::parse();
 
-    let mut conf_file: config::ConfigFile = match config::load_config() {
+    //? Defaults to $XDG_CONFIG_HOME/bday.toml
+    let conf_path: PathBuf = cli.file.unwrap_or_else(|| {
+        BaseDirs::new()
+            .map(|p| p.config_dir().join("bday.toml"))
+            .expect("Error getting the default birthday file path.\nYou can always use a custom birthday file with the --file option.")
+    });
+
+    let mut conf_file: config::ConfigFile = match config::load_config(&conf_path) {
         Ok(cfg) => cfg,
         Err(e) => match e {
             // Use a default config if no config file is found
-            config::LoadConfigError::ConfigNotFound => config::ConfigFile::default(),
+            config::LoadConfigError::ConfigNotFound => config::ConfigFile {
+                path: conf_path,
+                config: config::Config::default(),
+            },
             // TODO: Use clap to display the error message
             config::LoadConfigError::IoError(e) => {
                 eprintln!("Error reading config file: {}", e);

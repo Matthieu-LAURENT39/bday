@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::config::BirthdayDate;
 use chrono_tz::Tz;
 use clap::{Parser, Subcommand};
@@ -8,6 +10,10 @@ use clap::{Parser, Subcommand};
 pub struct Cli {
     #[clap(subcommand)]
     pub command: Commands,
+
+    /// The birthday file to use
+    #[arg(short, long)]
+    pub file: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -27,7 +33,6 @@ pub enum Commands {
         #[clap(value_parser = Tz::from_str_insensitive)]
         timezone: Option<Tz>,
     },
-    // TODO: Add "index" option to show indexes
     // TODO: Add option to show raw timezone instead of duration until the birthday
     /// Lists entries
     List {

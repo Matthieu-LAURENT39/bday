@@ -4,11 +4,9 @@ use chrono_tz::{ParseError, Tz};
 use clap::error::Result;
 use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
-use std::path::{self, Path};
+use std::path::{self, Path, PathBuf};
 use std::str::FromStr;
 use std::{fmt, fs};
-
-const CONFIG_FILE_NAME: &str = "bday.toml";
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub struct BirthdayDate {
@@ -203,21 +201,6 @@ pub struct ConfigFile {
     pub config: Config,
 }
 
-impl Default for ConfigFile {
-    fn default() -> Self {
-        let path = BaseDirs::new()
-            .map(|dirs| dirs.config_dir().join(CONFIG_FILE_NAME))
-            // Fallback to a hardcoded path if BaseDirs::new() returns None
-            .unwrap_or_else(|| path::PathBuf::from("~/.config/").join(CONFIG_FILE_NAME));
-
-        Self {
-            // Default to $XDG_CONFIG_HOME/bday.toml
-            path,
-            config: Config::default(),
-        }
-    }
-}
-
 pub enum LoadConfigError {
     /// A config file was found, but there was an error reading it
     IoError(std::io::Error),
@@ -227,37 +210,16 @@ pub enum LoadConfigError {
     ConfigNotFound,
 }
 
-/// Load the config file  
-/// The priority is in that order:
-/// - ./bday.toml
-/// - $XDG_CONFIG_HOME/bday.toml
-/// - $HOME/.config/bday.toml
-/// - $HOME/.bday.toml
-pub fn load_config() -> Result<ConfigFile, LoadConfigError> {
-    // Try various paths to find the config file
-    for path in [
-        //? ./bday.toml
-        Some(Path::new(".").join(CONFIG_FILE_NAME)),
-        //? $XDG_CONFIG_HOME/bday.toml
-        BaseDirs::new().map(|p: BaseDirs| p.config_dir().join(CONFIG_FILE_NAME)),
-        //? $HOME/.config/bday.toml
-        Some(Path::new("~/.config/").join(CONFIG_FILE_NAME)),
-        //? $HOME/.bday.toml
-        Some(Path::new("~/").join(".".to_owned() + CONFIG_FILE_NAME)),
-    ]
-    .iter()
-    // Remove the None values
-    .flatten()
-    {
-        if path.is_file() {
-            let toml_str = fs::read_to_string(path).map_err(LoadConfigError::IoError)?;
-            return toml::from_str(&toml_str)
-                .map_err(LoadConfigError::TomlError)
-                .map(|config| ConfigFile {
-                    path: path.to_path_buf(),
-                    config,
-                });
-        }
+/// Load the given config file
+pub fn load_config(path: &PathBuf) -> Result<ConfigFile, LoadConfigError> {
+    if path.is_file() {
+        let toml_str = fs::read_to_string(&path).map_err(LoadConfigError::IoError)?;
+        return toml::from_str(&toml_str)
+            .map_err(LoadConfigError::TomlError)
+            .map(|config| ConfigFile {
+                path: path.to_path_buf(),
+                config,
+            });
     }
     Err(LoadConfigError::ConfigNotFound)
 }
