@@ -60,26 +60,33 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_find_prev_next_occurences() {
-        // Test case 1: Birthday is same day as date
-        let date1 = NaiveDate::from_ymd_opt(2024, 2, 6).unwrap();
-        assert_eq!(find_prev_next_occurences(6, 2, date1), None);
-
-        // Test case 2: Birthday already happened this year
-        let date2 = NaiveDate::from_ymd_opt(2024, 2, 2).unwrap();
-        let expected2 = (
-            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
-        );
-        assert_eq!(find_prev_next_occurences(1, 1, date2), Some(expected2));
-
-        // Test case 3: Birthday hasn't happened yet this year
-        let date3 = NaiveDate::from_ymd_opt(2024, 5, 5).unwrap();
-        let expected3 = (
+    #[test_case(6,  2,  
+                NaiveDate::from_ymd_opt(2024, 2, 6).unwrap(),  
+                None ; 
+                "Birthday is same day as date")]
+    #[test_case(1,  1,  
+                NaiveDate::from_ymd_opt(2024, 2, 2).unwrap(),  
+                Some((
+                    NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), 
+                    NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+                )) ; 
+                "Birthday already happened this year")]
+    #[test_case(6,  6,  
+        NaiveDate::from_ymd_opt(2024, 5, 5).unwrap(),  
+        Some((
             NaiveDate::from_ymd_opt(2023, 6, 6).unwrap(),
             NaiveDate::from_ymd_opt(2024, 6, 6).unwrap(),
+        )) ; 
+        "Birthday hasn't happened yet this year")]
+    fn test_find_prev_next_occurences(
+        birthday_day: u32,
+        birthday_month: u32,
+        date: NaiveDate,
+        expected: Option<(NaiveDate, NaiveDate)>,
+    ) {
+        assert_eq!(
+            find_prev_next_occurences(birthday_day, birthday_month, date),
+            expected
         );
-        assert_eq!(find_prev_next_occurences(6, 6, date3), Some(expected3));
     }
 }
