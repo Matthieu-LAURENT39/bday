@@ -6,18 +6,13 @@
 
 Easily remember and see upcoming birthdays 🎂
 
-## Installation
-### With Cargo
-```bash
-cargo install bday
-```
 
-### From source
-```bash
-git clone "https://github.com/Matthieu-LAURENT39/bday"
-cd bday
-cargo install --path .
-```
+## Features
+- Show how far away birthdays are
+- Support for dates without specifying the year
+- Support for timezones, so you can wish your friends a happy birthday when the clock hits midnight in their country
+- Blazingly fast, even with large datasets ⚡️
+
 
 ## Usage
 ```bash
@@ -41,9 +36,24 @@ $ bday list
 ```
 
 
+## Installation
+### With Cargo
+```bash
+cargo install bday
+```
+
+### From source
+```bash
+git clone "https://github.com/Matthieu-LAURENT39/bday"
+cd bday
+cargo install --path .
+```
+
+
 ## Special thanks
 This project was inspired by [IonicaBizau's "birthday" tool](https://github.com/IonicaBizau/birthday).  
 I wanted to try making my own version in Rust as a learning experience.
+
 
 ## License
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
