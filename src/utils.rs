@@ -13,7 +13,7 @@ fn make_date_safe(year: i32, month: u32, day: u32) -> NaiveDate {
 }
 
 /// Get the previous and next occurences of a date, relative to a given date.  
-/// If the date is today, the result is None.  
+/// If the date is the same as the "date" argument, the result is None.  
 pub fn find_prev_next_occurences(
     day: u32,
     month: u32,
@@ -41,6 +41,7 @@ pub fn find_prev_next_occurences(
 
 #[cfg(test)]
 mod tests {
+    use super::find_prev_next_occurences;
     use chrono::{DateTime, Duration, Local, NaiveDate};
     use chrono_tz::TZ_VARIANTS;
     use test_case::test_case;
@@ -59,23 +60,26 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn test_get_next_occurence_coherent() {
-    //     // Both are inclusive
-    //     let start_date = NaiveDate::from_ymd_opt(1700, 1, 1).unwrap();
-    //     let end_date = Local::now().date_naive();
+    #[test]
+    fn test_find_prev_next_occurences() {
+        // Test case 1: Birthday is same day as date
+        let date1 = NaiveDate::from_ymd_opt(2024, 2, 6).unwrap();
+        assert_eq!(find_prev_next_occurences(6, 2, date1), None);
 
-    //     // Try every date between start_date and end_date, with every possible timezone.
-    //     // I assume that birthdays can't be in the future.
-    //     // This might take a while.
-    //     for tz in TZ_VARIANTS.iter() {
-    //         let mut current_date = start_date;
-    //         while current_date <= end_date {
-    //             let next_occurence = super::get_next_occurence(current_date, Some(*tz));
+        // Test case 2: Birthday already happened this year
+        let date2 = NaiveDate::from_ymd_opt(2024, 2, 2).unwrap();
+        let expected2 = (
+            NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
+        );
+        assert_eq!(find_prev_next_occurences(1, 1, date2), Some(expected2));
 
-    //             // Add one day
-    //             current_date += chrono::Duration::days(1);
-    //         }
-    //     }
-    // }
+        // Test case 3: Birthday hasn't happened yet this year
+        let date3 = NaiveDate::from_ymd_opt(2024, 5, 5).unwrap();
+        let expected3 = (
+            NaiveDate::from_ymd_opt(2023, 6, 6).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 6, 6).unwrap(),
+        );
+        assert_eq!(find_prev_next_occurences(6, 6, date3), Some(expected3));
+    }
 }
