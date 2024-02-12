@@ -60,24 +60,38 @@ mod tests {
         );
     }
 
-    #[test_case(6,  2,  
+    #[test_case(6, 2,
                 NaiveDate::from_ymd_opt(2024, 2, 6).unwrap(),  
                 None ; 
                 "Birthday is same day as date")]
-    #[test_case(1,  1,  
+    #[test_case(1, 1,
                 NaiveDate::from_ymd_opt(2024, 2, 2).unwrap(),  
                 Some((
                     NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), 
                     NaiveDate::from_ymd_opt(2025, 1, 1).unwrap(),
                 )) ; 
                 "Birthday already happened this year")]
-    #[test_case(6,  6,  
+    #[test_case(6, 6,
         NaiveDate::from_ymd_opt(2024, 5, 5).unwrap(),  
         Some((
             NaiveDate::from_ymd_opt(2023, 6, 6).unwrap(),
             NaiveDate::from_ymd_opt(2024, 6, 6).unwrap(),
         )) ; 
         "Birthday hasn't happened yet this year")]
+    #[test_case(29, 2,
+        NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),  
+        Some((
+            NaiveDate::from_ymd_opt(2023, 2, 28).unwrap(),
+            NaiveDate::from_ymd_opt(2024, 2, 29).unwrap(),
+        )) ; 
+        "Birthday is feb 29th, and date is a leap year")]
+    #[test_case(29, 2,
+        NaiveDate::from_ymd_opt(2023, 1, 1).unwrap(),  
+        Some((
+            NaiveDate::from_ymd_opt(2022, 2, 28).unwrap(),
+            NaiveDate::from_ymd_opt(2023, 2, 28).unwrap(),
+        )) ; 
+        "Birthday is feb 29th, and date is not a leap year")]
     fn test_find_prev_next_occurences(
         birthday_day: u32,
         birthday_month: u32,
