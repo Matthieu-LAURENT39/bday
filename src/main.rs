@@ -35,13 +35,18 @@ fn main() {
                 path: conf_path,
                 config: config::Config::default(),
             },
-            // TODO: Use clap to display the error message
             config::LoadConfigError::IoError(e) => {
-                eprintln!("Error reading config file: {}", e);
+                let _ = cli::Cli::command()
+                    .error(ErrorKind::Io, format!("Error reading config file: {}", e))
+                    // TODO: remove the "usage: " section that gets displayed
+                    .print();
                 exit(3);
             }
             config::LoadConfigError::TomlError(e) => {
-                eprintln!("Error parsing the birthday file:\n{}\nYou can delete the file, it will be recreated the next time you add a new birthday.", e);
+                let _ = cli::Cli::command()
+                    .error(ErrorKind::Io, format!("Error parsing the birthday file:\n{}\nYou can delete the file, it will be recreated the next time you add a new birthday.", e))
+                    // TODO: remove the "usage: " section that gets displayed
+                    .print();
                 exit(3);
             }
         },
@@ -92,11 +97,11 @@ fn main() {
                 Ok(entries) => entries,
                 Err(e) => match e {
                     config::EntryError::TimezoneParseError(e) => {
-                        cli::Cli::command()
+                        let _ = cli::Cli::command()
                             .error(ErrorKind::Io, format!("Error parsing timezone: {}.", e))
-                            // TODO: change the error code to 3
                             // TODO: remove the "usage: " section that gets displayed
-                            .exit()
+                            .print();
+                        exit(3);
                     }
                 },
             };
