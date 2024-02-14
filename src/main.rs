@@ -5,7 +5,6 @@ use chrono_humanize::HumanTime;
 use clap::{error::ErrorKind, CommandFactory, Parser};
 use directories::BaseDirs;
 use prettytable::{format, row, Table};
-use std::iter::Peekable;
 use std::path::PathBuf;
 use std::{fs, process::exit};
 
@@ -85,6 +84,8 @@ fn main() {
                 exit(0);
             }
 
+            let now: DateTime<Local> = Local::now();
+
             // Validate the 'before' date
             let before_date: Option<NaiveDate> = before.and_then(|before| {
                 if before.year.is_none() {
@@ -99,8 +100,17 @@ fn main() {
                 }
                 Some(before.naive_date_safe_year())
             });
-
-            let now: DateTime<Local> = Local::now();
+            // Check that the date isn't in the past
+            if let Some(before_date) = before_date {
+                if before_date < now.date_naive() {
+                    cli::Cli::command()
+                        .error(
+                            ErrorKind::ValueValidation,
+                            "The 'before' date can't be in the past.",
+                        )
+                        .exit();
+                }
+            };
 
             // Parse the ConfigEntry to Entry
             let mut entries: Vec<config::Entry> = match conf_file
@@ -151,7 +161,7 @@ fn main() {
             // Makes the header bold
             table.set_titles(row![b => "#", "Name", "Date", "Age", "In"]);
 
-            let iter = entries
+            let mut iter = entries
                 .iter()
                 .rev()
                 .take(limit.unwrap_or(entries.len()))
@@ -163,7 +173,13 @@ fn main() {
                             entry.next_occurence.unwrap_or(Local::now()).date_naive() <= before_date
                         })
                         .unwrap_or(true)
-                });
+                })
+                .peekable();
+
+            if iter.peek().is_none() {
+                eprintln!("No entries match the given criteria.");
+                exit(0);
+            }
 
             for (index, entry) in iter.enumerate() {
                 let new_age: Option<i32> = entry
