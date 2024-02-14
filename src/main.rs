@@ -135,7 +135,7 @@ fn main() {
             // Makes the header bold
             table.set_titles(row![b => "#", "Name", "Date", "Age", "In"]);
             let iter: Box<dyn Iterator<Item = &config::Entry>> = match limit {
-                Some(limit) => Box::new(entries.iter().take(*limit)),
+                Some(limit) => Box::new(entries.iter().rev().take(*limit).rev()),
                 None => Box::new(entries.iter()),
             };
             for (index, entry) in iter.enumerate() {
