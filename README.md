@@ -54,7 +54,7 @@ $ bday list --limit 1
 **Display the birthdays that will happen in the next 7 days**  
 A personal favorite of mine is adding this to my `~/.bashrc` to display upcoming birthdays.  
 ```bash
-bday -f /tmp/aaa.toml list --before $(date -d "+7 days" "+%Y-%m-%d") 2> /dev/null
+bday list --before $(date -d "+7 days" "+%Y-%m-%d") 2> /dev/null
 ```
 Note that this displays nothing if no birthdays are coming up.
 
