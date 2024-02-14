@@ -38,5 +38,8 @@ pub enum Commands {
         /// Display only the closest n entries
         #[arg(short, long)]
         limit: Option<usize>,
+        /// Display only entries that will happen before (or during) the given date
+        #[arg(short, long)]
+        before: Option<BirthdayDate>,
     },
 }

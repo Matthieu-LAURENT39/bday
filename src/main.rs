@@ -1,10 +1,11 @@
-use chrono::{DateTime, Datelike, Local};
+use chrono::{DateTime, Datelike, Local, NaiveDate};
 use chrono_humanize::HumanTime;
 // use clap::error::Result;
 // use clap::{error::Error, error::ErrorKind, Command, CommandFactory, Parser, Subcommand};
 use clap::{error::ErrorKind, CommandFactory, Parser};
 use directories::BaseDirs;
 use prettytable::{format, row, Table};
+use std::iter::Peekable;
 use std::path::PathBuf;
 use std::{fs, process::exit};
 
@@ -78,11 +79,26 @@ fn main() {
                 }
             );
         }
-        cli::Commands::List { limit } => {
+        cli::Commands::List { limit, before } => {
             if conf_file.config.birthdays.is_empty() {
                 eprintln!("No entries found, add some with the 'add' command.");
                 exit(0);
             }
+
+            // Validate the 'before' date
+            let before_date: Option<NaiveDate> = before.and_then(|before| {
+                if before.year.is_none() {
+                    let _ = cli::Cli::command()
+                        .error(
+                            ErrorKind::ValueValidation,
+                            "The year must be specified for the 'before' option.",
+                        )
+                        // TODO: remove the "usage: " section that gets displayed
+                        .print();
+                    exit(3);
+                }
+                Some(before.naive_date_safe_year())
+            });
 
             let now: DateTime<Local> = Local::now();
 
@@ -134,14 +150,26 @@ fn main() {
 
             // Makes the header bold
             table.set_titles(row![b => "#", "Name", "Date", "Age", "In"]);
-            let iter: Box<dyn Iterator<Item = &config::Entry>> = match limit {
-                Some(limit) => Box::new(entries.iter().rev().take(*limit).rev()),
-                None => Box::new(entries.iter()),
-            };
+
+            let iter = entries
+                .iter()
+                .rev()
+                .take(limit.unwrap_or(entries.len()))
+                .rev()
+                // Only show entries that will happen before or durign before_date
+                .filter(|entry: &&config::Entry| {
+                    before_date
+                        .map(|before_date| {
+                            entry.next_occurence.unwrap_or(Local::now()).date_naive() <= before_date
+                        })
+                        .unwrap_or(true)
+                });
+
             for (index, entry) in iter.enumerate() {
                 let new_age: Option<i32> = entry
                     .date
                     .year
+                    // If next_occurence is None, it means the birthday is today, so we use now
                     .map(|y| entry.next_occurence.unwrap_or(Local::now()).year() - y);
 
                 table.add_row(row![
