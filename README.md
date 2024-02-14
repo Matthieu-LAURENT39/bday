@@ -33,8 +33,30 @@ $ bday list
 ├───┼──────────────┼─────────────┼─────────┼─────────────┤
 │ 2 │ Akiha Rumiho │ 03 April    │ ?       │ in 2 months │
 ╰───┴──────────────┴─────────────┴─────────┴─────────────╯
+
+# List birthdays that will occur before a date
+$ bday list --before 15/05/2024
+╭───┬──────────────┬──────────┬─────┬─────────────╮
+│ # │ Name         │ Date     │ Age │ In          │
+├───┼──────────────┼──────────┼─────┼─────────────┤
+│ 1 │ Akiha Rumiho │ 03 April │ ?   │ in 2 months │
+╰───┴──────────────┴──────────┴─────┴─────────────╯
+
+# List only the n birthdays closest to today
+$ bday list --limit 1
+╭───┬──────────────┬──────────┬─────┬─────────────╮
+│ # │ Name         │ Date     │ Age │ In          │
+├───┼──────────────┼──────────┼─────┼─────────────┤
+│ 1 │ Akiha Rumiho │ 03 April │ ?   │ in 2 months │
+╰───┴──────────────┴──────────┴─────┴─────────────╯
 ```
 
+**Display the birthdays that will happen in the next 7 days**  
+A personal favorite of mine is adding this to my `~/.bashrc` to display upcoming birthdays.  
+```bash
+bday -f /tmp/aaa.toml list --before $(date -d "+7 days" "+%Y-%m-%d") 2> /dev/null
+```
+Note that this displays nothing if no birthdays are coming up.
 
 ## Installation
 ### With Cargo
